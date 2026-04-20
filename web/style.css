@@ -150,6 +150,14 @@ body {
   overflow-y: auto;
 }
 
+.contact-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
 .contact-hint {
   color: var(--muted);
   margin-bottom: 0.4rem;

@@ -114,7 +114,6 @@ function buildContactTerminal() {
 
   const win = document.createElement('div');
   win.className = 'terminal-window';
-  win.tabIndex = 0;
   win.innerHTML = `
     <div class="terminal-titlebar">
       <div class="terminal-buttons">
@@ -126,29 +125,29 @@ function buildContactTerminal() {
     </div>
     <div class="terminal-body contact-body">
       <div class="contact-hint"># try: email &lt;your message here&gt;</div>
+      <input class="contact-input" type="text"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        aria-label="terminal input">
     </div>`;
 
   container.replaceWith(win);
 
   const body = win.querySelector('.contact-body');
-  let buffer = '';
+  const input = win.querySelector('.contact-input');
 
   addContactPrompt(body);
 
-  win.addEventListener('click', () => win.focus());
-  win.addEventListener('keydown', e => {
-    if (e.metaKey || e.ctrlKey) return;
-    e.preventDefault();
+  win.addEventListener('click', () => input.focus());
 
+  input.addEventListener('input', () => {
+    body.querySelector('.contact-line:last-child .contact-typed').textContent = input.value;
+  });
+
+  input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      runEmailCommand(buffer.trim(), body);
-      buffer = '';
-    } else if (e.key === 'Backspace') {
-      buffer = buffer.slice(0, -1);
-      body.querySelector('.contact-line:last-child .contact-typed').textContent = buffer;
-    } else if (e.key.length === 1) {
-      buffer += e.key;
-      body.querySelector('.contact-line:last-child .contact-typed').textContent = buffer;
+      e.preventDefault();
+      runEmailCommand(input.value.trim(), body);
+      input.value = '';
     }
   });
 }
