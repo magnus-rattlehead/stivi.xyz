@@ -67,7 +67,7 @@ window.addEventListener('mousemove', e => {
 
 // ── Cat ───────────────────────────────────────────────────────────────────────
 
-const cat = {
+const catState = {
   x: window.innerWidth  * (0.2 + Math.random() * 0.6),
   y: window.innerHeight * (0.2 + Math.random() * 0.6),
   angle: Math.random() * Math.PI * 2,
@@ -79,48 +79,48 @@ const cat = {
 };
 
 function setDir(dir) {
-  if (dir === cat.currentDir) return;
-  if (cat.currentDir) sprites[cat.currentDir].style.display = 'none';
+  if (dir === catState.currentDir) return;
+  if (catState.currentDir) sprites[catState.currentDir].style.display = 'none';
   sprites[dir].style.display = 'block';
-  cat.currentDir = dir;
+  catState.currentDir = dir;
 }
 
 function placeSprite() {
-  // position so feet land at (cat.x, cat.y)
-  sprites[cat.currentDir].style.transform =
-    `translate(${cat.x - SPRITE_W / 2}px, ${cat.y - SPRITE_H}px)`;
+  // position so feet land at (catState.x, catState.y)
+  sprites[catState.currentDir].style.transform =
+    `translate(${catState.x - SPRITE_W / 2}px, ${catState.y - SPRITE_H}px)`;
 }
 
 function updateDir() {
-  const candidate = angleToDir(cat.angle);
-  if (candidate === cat.currentDir) {
-    cat.pendingDir = null;
-    cat.pendingDirCount = 0;
+  const candidate = angleToDir(catState.angle);
+  if (candidate === catState.currentDir) {
+    catState.pendingDir = null;
+    catState.pendingDirCount = 0;
     return;
   }
-  if (candidate === cat.pendingDir) {
-    if (++cat.pendingDirCount >= DIR_HYSTERESIS_FRAMES) {
-      cat.pendingDir = null;
-      cat.pendingDirCount = 0;
+  if (candidate === catState.pendingDir) {
+    if (++catState.pendingDirCount >= DIR_HYSTERESIS_FRAMES) {
+      catState.pendingDir = null;
+      catState.pendingDirCount = 0;
       setDir(candidate);
     }
   } else {
-    cat.pendingDir = candidate;
-    cat.pendingDirCount = 1;
+    catState.pendingDir = candidate;
+    catState.pendingDirCount = 1;
   }
 }
 
 function applyEdgeRepulsion(dt) {
   const W = window.innerWidth, H = window.innerHeight;
   let fx = 0, fy = 0;
-  if (cat.x < EDGE_MARGIN)      fx += (EDGE_MARGIN - cat.x)       * EDGE_FORCE;
-  if (cat.x > W - EDGE_MARGIN)  fx -= (cat.x - (W - EDGE_MARGIN)) * EDGE_FORCE;
-  if (cat.y < EDGE_MARGIN)      fy += (EDGE_MARGIN - cat.y)       * EDGE_FORCE;
-  if (cat.y > H - EDGE_MARGIN)  fy -= (cat.y - (H - EDGE_MARGIN)) * EDGE_FORCE;
+  if (catState.x < EDGE_MARGIN)      fx += (EDGE_MARGIN - catState.x)       * EDGE_FORCE;
+  if (catState.x > W - EDGE_MARGIN)  fx -= (catState.x - (W - EDGE_MARGIN)) * EDGE_FORCE;
+  if (catState.y < EDGE_MARGIN)      fy += (EDGE_MARGIN - catState.y)       * EDGE_FORCE;
+  if (catState.y > H - EDGE_MARGIN)  fy -= (catState.y - (H - EDGE_MARGIN)) * EDGE_FORCE;
   if (fx || fy) {
-    const spd = cat.state === 'FLEE' ? FLEE_SPEED : WANDER_SPEED;
-    cat.angle = Math.atan2(Math.sin(cat.angle) * spd + fy * dt,
-                           Math.cos(cat.angle) * spd + fx * dt);
+    const spd = catState.state === 'FLEE' ? FLEE_SPEED : WANDER_SPEED;
+    catState.angle = Math.atan2(Math.sin(catState.angle) * spd + fy * dt,
+                           Math.cos(catState.angle) * spd + fx * dt);
   }
 }
 
@@ -132,31 +132,33 @@ function tick(now) {
   const dt = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
 
+  cursor.speed *= Math.pow(0.5, dt / 0.3);
+
   try {
-    if (cat.state === 'WANDER') {
-      const target = Math.atan2(cursor.y - cat.y, cursor.x - cat.x);
-      cat.angle += normalizeAngle(target - cat.angle) * WANDER_TURN_RATE * dt;
-      cat.angle += (Math.random() - 0.5) * WANDER_NOISE * dt;
-      cat.x += Math.cos(cat.angle) * WANDER_SPEED * dt;
-      cat.y += Math.sin(cat.angle) * WANDER_SPEED * dt;
+    if (catState.state === 'WANDER') {
+      const target = Math.atan2(cursor.y - catState.y, cursor.x - catState.x);
+      catState.angle += normalizeAngle(target - catState.angle) * WANDER_TURN_RATE * dt;
+      catState.angle += (Math.random() - 0.5) * WANDER_NOISE * dt;
+      catState.x += Math.cos(catState.angle) * WANDER_SPEED * dt;
+      catState.y += Math.sin(catState.angle) * WANDER_SPEED * dt;
       updateDir();
       if (cursor.speed > FLEE_VELOCITY_THRESH) {
-        cat.state = 'FLEE';
-        cat.fleeStartTime = now;
-        cat.angle = Math.atan2(cat.y - cursor.y, cat.x - cursor.x);
+        catState.state = 'FLEE';
+        catState.fleeStartTime = now;
+        catState.angle = Math.atan2(catState.y - cursor.y, catState.x - cursor.x);
       }
     } else {
-      const away = Math.atan2(cat.y - cursor.y, cat.x - cursor.x);
-      cat.angle += normalizeAngle(away - cat.angle) * FLEE_TURN_RATE * dt;
-      cat.x += Math.cos(cat.angle) * FLEE_SPEED * dt;
-      cat.y += Math.sin(cat.angle) * FLEE_SPEED * dt;
+      const away = Math.atan2(catState.y - cursor.y, catState.x - cursor.x);
+      catState.angle += normalizeAngle(away - catState.angle) * FLEE_TURN_RATE * dt;
+      catState.x += Math.cos(catState.angle) * FLEE_SPEED * dt;
+      catState.y += Math.sin(catState.angle) * FLEE_SPEED * dt;
       updateDir();
-      if (now - cat.fleeStartTime > FLEE_DURATION_MS) cat.state = 'WANDER';
+      if (now - catState.fleeStartTime > FLEE_DURATION_MS) catState.state = 'WANDER';
     }
 
     applyEdgeRepulsion(dt);
-    cat.x = Math.max(0, Math.min(window.innerWidth,  cat.x));
-    cat.y = Math.max(0, Math.min(window.innerHeight, cat.y));
+    catState.x = Math.max(0, Math.min(window.innerWidth,  catState.x));
+    catState.y = Math.max(0, Math.min(window.innerHeight, catState.y));
     placeSprite();
   } catch (e) {
     console.error('cat tick error:', e);
@@ -167,6 +169,14 @@ function tick(now) {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
-setDir('east');
-placeSprite();
-requestAnimationFrame(tick);
+let started = false;
+
+window.cat = function () {
+  if (started) return;
+  started = true;
+  setDir('east');
+  placeSprite();
+  requestAnimationFrame(tick);
+};
+
+console.log('%ccommands available are: cat', 'color:#9d7fe3;font-family:monospace');
