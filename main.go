@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/yuin/goldmark"
 )
@@ -35,8 +36,12 @@ func main() {
 	mux.Handle("GET /web/", http.StripPrefix("/web/", http.FileServer(http.FS(staticFS))))
 	mux.HandleFunc("GET /", handleIndex)
 
-	log.Println("listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("listening on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
