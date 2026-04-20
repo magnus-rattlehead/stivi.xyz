@@ -1,0 +1,8 @@
+# Binary
+stivi.xyz
+
+# macOS
+.DS_Store
+
+# Vim swap files
+*.un~
