@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
+	resend "github.com/resend/resend-go/v2"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/renderer/html"
 )
@@ -38,6 +41,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("GET /web/", http.StripPrefix("/web/", http.FileServer(http.FS(staticFS))))
 	mux.HandleFunc("GET /", handleIndex)
+	mux.HandleFunc("POST /api/contact", handleContact)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -45,6 +49,38 @@ func main() {
 	}
 	log.Printf("listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, mux))
+}
+
+func handleContact(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Message string `json:"message"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Message) == "" {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		http.Error(w, "email not configured", http.StatusInternalServerError)
+		return
+	}
+
+	client := resend.NewClient(apiKey)
+	_, err := client.Emails.Send(&resend.SendEmailRequest{
+		From:    "contact@stivi.xyz",
+		To:      []string{"guranjakustivi@gmail.com"},
+		Subject: "Message from stivi.xyz",
+		Text:    body.Message,
+	})
+	if err != nil {
+		log.Printf("resend error: %v", err)
+		http.Error(w, "failed to send", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "sent"})
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {

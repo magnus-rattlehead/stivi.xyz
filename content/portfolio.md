@@ -71,13 +71,11 @@ says into the terminal.
 
 ---
 
-**Links**
-
 <div class="profile-badges">
 <a href="https://github.com/magnus-rattlehead"><img src="https://img.shields.io/badge/GitHub-magnus--rattlehead-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
-<div class="badge-base LI-profile-badge" data-locale="en_US" data-size="medium" data-theme="dark" data-type="VERTICAL" data-vanity="stiviguranjaku" data-version="v1"><a class="badge-base__link LI-simple-link" href="https://ca.linkedin.com/in/stiviguranjaku?trk=profile-badge">Stivi Guranjaku</a></div>
+<div class="badge-base LI-profile-badge" data-locale="en_US" data-size="medium" data-theme="dark" data-type="VERTICAL" data-vanity="stiviguranjaku" data-version="v1"></div>
 <script src="https://platform.linkedin.com/badges/js/profile.js" async defer type="text/javascript"></script>
 </div>
+<div id="contact-terminal"></div>
 
-* [Full Resume (PDF)](/web/assets/static/resume.pdf)
-* [Contact](mailto:guranjakustivi@gmail.com)
+<div id="resume-preview"></div>
