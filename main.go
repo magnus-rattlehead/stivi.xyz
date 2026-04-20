@@ -2,25 +2,37 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/yuin/goldmark"
 )
 
-var indexTmpl *template.Template
+//go:embed web
+var webFS embed.FS
+
+//go:embed content/portfolio.md
+var portfolioMD []byte
+
+var indexTmpl = template.Must(func() (*template.Template, error) {
+	b, err := webFS.ReadFile("web/index.html")
+	if err != nil {
+		panic(err)
+	}
+	return template.New("index").Parse(string(b))
+}())
 
 func main() {
-	var err error
-	indexTmpl, err = template.ParseFiles("web/index.html")
+	staticFS, err := fs.Sub(webFS, "web")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /web/", http.StripPrefix("/web/", http.FileServer(http.Dir("web"))))
+	mux.Handle("GET /web/", http.StripPrefix("/web/", http.FileServer(http.FS(staticFS))))
 	mux.HandleFunc("GET /", handleIndex)
 
 	log.Println("listening on :8080")
@@ -32,13 +44,8 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	md, err := os.ReadFile("content/portfolio.md")
-	if err != nil {
-		http.Error(w, "content not found", http.StatusInternalServerError)
-		return
-	}
 	var buf bytes.Buffer
-	if err := goldmark.Convert(md, &buf); err != nil {
+	if err := goldmark.Convert(portfolioMD, &buf); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 		return
 	}
