@@ -54,6 +54,91 @@ body {
   border-radius: 8px;
 }
 
+/* ── Profile badges ───────────────────────────────────────── */
+.profile-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 0.5rem 0 1rem;
+}
+
+.profile-badges img { border-radius: 8px; display: block; }
+
+/* ── Terminal windows ─────────────────────────────────────── */
+.terminal-window {
+  margin: 2rem 0 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1c1c1e;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
+.terminal-titlebar {
+  background: #3a3a3c;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+}
+
+.terminal-buttons { display: flex; gap: 7px; }
+
+.terminal-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.terminal-btn.close    { background: #ff5f57; }
+.terminal-btn.minimize { background: #febc2e; }
+.terminal-btn.maximize { background: #28c840; }
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #9a9a9e;
+  font-family: -apple-system, system-ui, sans-serif;
+  margin-right: 52px; /* visually centre the title past the buttons */
+}
+
+.terminal-body {
+  padding: 0.9rem 1.2rem 1rem;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  min-height: 2.8rem;
+}
+
+.terminal-prompt { color: #30d158; }
+
+.terminal-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  background: currentColor;
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: term-blink 1s step-end infinite;
+}
+
+.terminal-cursor.done { display: none; }
+
+@keyframes term-blink { 50% { opacity: 0; } }
+
+/* ── Section reveal ───────────────────────────────────────── */
+.section-content {
+  display: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.section-content.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .cat-sprite {
   position: fixed;
   pointer-events: none;

@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 //go:embed web
@@ -17,6 +18,8 @@ var webFS embed.FS
 
 //go:embed content/portfolio.md
 var portfolioMD []byte
+
+var md = goldmark.New(goldmark.WithRendererOptions(html.WithUnsafe()))
 
 var indexTmpl = template.Must(func() (*template.Template, error) {
 	b, err := webFS.ReadFile("web/index.html")
@@ -50,7 +53,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var buf bytes.Buffer
-	if err := goldmark.Convert(portfolioMD, &buf); err != nil {
+	if err := md.Convert(portfolioMD, &buf); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 		return
 	}
