@@ -7,32 +7,129 @@ document.addEventListener('DOMContentLoaded', () => {
   const h2s = Array.from(content.querySelectorAll('h2'));
   if (!h2s.length) return;
 
-  h2s.forEach(h2 => {
-    // Collect all siblings until the next h2
+  const stopEl = document.getElementById('resume-preview');
+
+  const sections = h2s.map(h2 => {
     const siblings = [];
     let el = h2.nextElementSibling;
-    while (el && el.tagName !== 'H2') {
+    while (el && el.tagName !== 'H2' && el !== stopEl) {
       siblings.push(el);
       el = el.nextElementSibling;
     }
 
-    // Wrap h2 + its siblings in a hidden section container
     const section = document.createElement('div');
     section.className = 'section-content';
     h2.before(section);
     section.append(h2, ...siblings);
 
-    // Build and insert terminal window before the section
-    const terminal = buildTerminal(h2.textContent);
-    section.before(terminal);
+    const sentinel = document.createElement('div');
+    sentinel.className = 'section-sentinel';
+    section.appendChild(sentinel);
 
-    setupReveal(terminal, section);
+    const cmd = `cat ${slugify(h2.textContent)}.md`;
+    const cmdLine = document.createElement('div');
+    cmdLine.className = 'term-cmd-line';
+    cmdLine.dataset.cmd = cmd;
+    cmdLine.innerHTML =
+      `<span class="terminal-prompt">$ </span>` +
+      `<span class="term-cmd-text"></span>` +
+      `<span class="terminal-cursor"></span>`;
+    section.before(cmdLine);
+
+    return { section, sentinel, cmdLine, cmd };
+  });
+
+  const lastIndex = sections.length - 1;
+
+  // Instantly reveal sections already scrolled above viewport
+  let startIndex = 0;
+  for (let i = 0; i < sections.length; i++) {
+    const { cmdLine, section, cmd } = sections[i];
+    if (cmdLine.getBoundingClientRect().bottom >= 0) break;
+    cmdLine.querySelector('.term-cmd-text').textContent = cmd;
+    cmdLine.querySelector('.terminal-cursor').classList.add('done');
+    section.style.transition = 'none';
+    section.style.display = 'block';
+    section.style.opacity = '1';
+    section.style.transform = 'none';
+    if (i === lastIndex) document.dispatchEvent(new CustomEvent('about-revealed'));
+    startIndex = i + 1;
+  }
+
+  if (startIndex < sections.length) {
+    setTimeout(() => runChain(sections, startIndex, lastIndex), 300);
+  }
+
+  // Move badges + source link outside the terminal window
+  const portfolio = document.querySelector('.portfolio');
+  ['.profile-badges', '.site-source'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el && portfolio) portfolio.appendChild(el);
   });
 });
 
+// ── Chain ─────────────────────────────────────────────────────────────────────
+
+function runChain(sections, index, lastIndex) {
+  if (index >= sections.length) return;
+  const { cmdLine, section, sentinel } = sections[index];
+
+  typeCmdLine(cmdLine, () => {
+    revealSection(section, () => {
+      if (index === lastIndex) document.dispatchEvent(new CustomEvent('about-revealed'));
+      observeSentinel(sentinel, () => {
+        runChain(sections, index + 1, lastIndex);
+      });
+    });
+  });
+}
+
+function typeCmdLine(cmdLineEl, onDone) {
+  const cmd = cmdLineEl.dataset.cmd;
+  const cmdText = cmdLineEl.querySelector('.term-cmd-text');
+  const cursor = cmdLineEl.querySelector('.terminal-cursor');
+  let i = 0;
+  const tick = setInterval(() => {
+    cmdText.textContent += cmd[i++];
+    if (i >= cmd.length) {
+      clearInterval(tick);
+      cursor.classList.add('done');
+      setTimeout(onDone, 280);
+    }
+  }, 28);
+}
+
+function revealSection(sectionEl, onDone) {
+  sectionEl.style.display = 'block';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      sectionEl.classList.add('revealed');
+      let fired = false;
+      const done = () => { if (!fired) { fired = true; onDone(); } };
+      sectionEl.addEventListener('transitionend', function handler(e) {
+        if (e.propertyName !== 'opacity') return;
+        sectionEl.removeEventListener('transitionend', handler);
+        done();
+      });
+      setTimeout(done, 500);
+    });
+  });
+}
+
+function observeSentinel(sentinelEl, onDone) {
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    obs.unobserve(sentinelEl);
+    onDone();
+  }, { threshold: 0 });
+  obs.observe(sentinelEl);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function slugify(text) {
   return text
-    .replace(/[^\x00-\x7F]/g, '')   // strip emoji / non-ASCII
+    .replace(/[^\x00-\x7F]/g, '')
     .replace(/&/g, 'and')
     .replace(/[^a-zA-Z0-9\s]/g, '')
     .trim()
@@ -40,113 +137,36 @@ function slugify(text) {
     .replace(/\s+/g, '-');
 }
 
-function buildTerminal(headerText) {
-  const cmd = `cat ${slugify(headerText)}.md`;
-  const win = document.createElement('div');
-  win.className = 'terminal-window';
-  win.dataset.cmd = cmd;
-  win.innerHTML = `
-    <div class="terminal-titlebar">
-      <div class="terminal-buttons">
-        <span class="terminal-btn close"></span>
-        <span class="terminal-btn minimize"></span>
-        <span class="terminal-btn maximize"></span>
-      </div>
-      <span class="terminal-title">bash \u2014 80\u00d724</span>
-    </div>
-    <div class="terminal-body">
-      <span class="terminal-prompt">$ </span><span
-        class="terminal-cmd-text"></span><span class="terminal-cursor"></span>
-    </div>`;
-  return win;
-}
-
-function setupReveal(terminal, section) {
-  // Already scrolled past on load — reveal instantly, no animation
-  if (terminal.getBoundingClientRect().bottom < 0) {
-    section.style.transition = 'none';
-    section.style.display = 'block';
-    section.style.opacity = '1';
-    section.style.transform = 'none';
-    const cmdEl = terminal.querySelector('.terminal-cmd-text');
-    cmdEl.textContent = terminal.dataset.cmd;
-    terminal.querySelector('.terminal-cursor').classList.add('done');
-    return;
-  }
-
-  const obs = new IntersectionObserver(entries => {
-    if (!entries[0].isIntersecting) return;
-    obs.unobserve(terminal);
-    typeCommand(terminal, section);
-  }, { threshold: 0.4 });
-
-  obs.observe(terminal);
-}
-
-function typeCommand(terminal, section) {
-  const cmd = terminal.dataset.cmd;
-  const cmdEl = terminal.querySelector('.terminal-cmd-text');
-  const cursor = terminal.querySelector('.terminal-cursor');
-  let i = 0;
-  const tick = setInterval(() => {
-    cmdEl.textContent += cmd[i++];
-    if (i >= cmd.length) {
-      clearInterval(tick);
-      cursor.classList.add('done');
-      setTimeout(() => reveal(section), 280);
-    }
-  }, 55);
-}
-
-function reveal(section) {
-  section.style.display = 'block';
-  // Double rAF: let browser compute layout before starting transition
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      section.classList.add('revealed');
-    });
-  });
-}
+// ── Contact terminal (inline) ─────────────────────────────────────────────────
 
 function buildContactTerminal() {
   const container = document.getElementById('contact-terminal');
   if (!container) return;
 
-  const win = document.createElement('div');
-  win.className = 'terminal-window';
-  win.innerHTML = `
-    <div class="terminal-titlebar">
-      <div class="terminal-buttons">
-        <span class="terminal-btn close"></span>
-        <span class="terminal-btn minimize"></span>
-        <span class="terminal-btn maximize"></span>
-      </div>
-      <span class="terminal-title">bash \u2014 80\u00d724</span>
-    </div>
-    <div class="terminal-body contact-body">
-      <div class="contact-hint"># try: email &lt;your message here&gt;</div>
-      <input class="contact-input" type="text"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        aria-label="terminal input">
-    </div>`;
+  const div = document.createElement('div');
+  div.className = 'contact-inline';
+  div.innerHTML =
+    `<div class="contact-hint"># try: email &lt;your message here&gt; | cat</div>` +
+    `<input class="contact-input" type="text"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      aria-label="terminal input">`;
 
-  container.replaceWith(win);
+  container.replaceWith(div);
 
-  const body = win.querySelector('.contact-body');
-  const input = win.querySelector('.contact-input');
+  const input = div.querySelector('.contact-input');
 
-  addContactPrompt(body);
+  addContactPrompt(div);
 
-  win.addEventListener('click', () => input.focus());
+  div.addEventListener('click', () => input.focus());
 
   input.addEventListener('input', () => {
-    body.querySelector('.contact-line:last-child .contact-typed').textContent = input.value;
+    div.querySelector('.contact-line:last-child .contact-typed').textContent = input.value;
   });
 
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      runEmailCommand(input.value.trim(), body);
+      runEmailCommand(input.value.trim(), div);
       input.value = '';
     }
   });
@@ -190,6 +210,9 @@ function runEmailCommand(cmd, body) {
     return;
   } else if (cmd === 'email') {
     addContactOutput(body, 'usage: email <your message>', true);
+  } else if (cmd === 'cat') {
+    if (typeof window.cat === 'function') window.cat();
+    addContactOutput(body, 'meow.', false);
   } else if (cmd !== '') {
     addContactOutput(body, `command not found: ${cmd.split(' ')[0]}`, true);
   }

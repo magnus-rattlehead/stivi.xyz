@@ -178,5 +178,3 @@ window.cat = function () {
   placeSprite();
   requestAnimationFrame(tick);
 };
-
-console.log('%ccommands available are: cat', 'color:#9d7fe3;font-family:monospace');

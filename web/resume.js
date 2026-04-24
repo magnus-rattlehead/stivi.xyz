@@ -1,40 +1,55 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('about-revealed', () => {
   const container = document.getElementById('resume-preview');
   if (!container) return;
+
+  const PDF_SRC = '/web/assets/static/resume.pdf#toolbar=0&navpanes=0&scrollbar=0';
+  const PDF_DL  = '/web/assets/static/resume.pdf';
 
   const wrapper = document.createElement('div');
   wrapper.className = 'resume-wrapper';
   wrapper.innerHTML = `
     <div class="resume-clip">
-      <iframe
-        src="/web/assets/static/resume.pdf#toolbar=0&navpanes=0&scrollbar=0"
-        class="resume-frame"
-        title="Resume"
-      ></iframe>
+      <iframe src="${PDF_SRC}" class="resume-frame" title="Resume"></iframe>
       <div class="resume-fade"></div>
-    </div>
-    <button class="resume-btn">&#9660; expand resume</button>`;
+      <div class="resume-shield"></div>
+    </div>`;
 
   container.replaceWith(wrapper);
 
-  const clip = wrapper.querySelector('.resume-clip');
-  const fade = wrapper.querySelector('.resume-fade');
-  const btn = wrapper.querySelector('.resume-btn');
+  const clip   = wrapper.querySelector('.resume-clip');
+  const frame  = wrapper.querySelector('.resume-frame');
+  const fade   = wrapper.querySelector('.resume-fade');
+  const shield = wrapper.querySelector('.resume-shield');
 
-  const PREVIEW_H = 300;
-  let expanded = false;
+  // Parse MediaBox → native px width
+  fetch(PDF_DL)
+    .then(r => r.arrayBuffer())
+    .then(buf => {
+      const text = new TextDecoder('latin1').decode(new Uint8Array(buf));
+      const m = text.match(/MediaBox\s*\[\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/);
+      if (m) {
+        const pxW = Math.round(parseFloat(m[1]) * 96 / 72);
+        clip.style.maxWidth = pxW + 'px';
+      }
+    });
 
-  btn.addEventListener('click', () => {
-    expanded = !expanded;
-    if (expanded) {
-      const frame = wrapper.querySelector('.resume-frame');
-      clip.style.height = frame.offsetHeight + 'px';
-      fade.hidden = true;
-      btn.innerHTML = '&#9650; collapse resume';
-    } else {
-      clip.style.height = PREVIEW_H + 'px';
-      fade.hidden = false;
-      btn.innerHTML = '&#9660; expand resume';
+  // Scroll-to-expand preview
+  function checkExpand() {
+    if (clip.getBoundingClientRect().bottom <= window.innerHeight + 2) {
+      window.removeEventListener('scroll', checkExpand, { passive: true });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        clip.style.height = frame.offsetHeight + 'px';
+        fade.hidden = true;
+      }));
     }
+  }
+  window.addEventListener('scroll', checkExpand, { passive: true });
+
+  // Click to download
+  shield.addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = PDF_DL;
+    a.download = 'resume.pdf';
+    a.click();
   });
 });

@@ -8,7 +8,19 @@
 </head>
 <body>
   <main class="portfolio">
-    <article class="content">{{.}}</article>
+    <div class="terminal-window main-terminal">
+      <div class="terminal-titlebar">
+        <div class="terminal-buttons">
+          <span class="terminal-btn close"></span>
+          <span class="terminal-btn minimize"></span>
+          <span class="terminal-btn maximize"></span>
+        </div>
+        <span class="terminal-title">bash &mdash; stivi.xyz</span>
+      </div>
+      <div class="terminal-body main-terminal-body">
+        <article class="content">{{.}}</article>
+      </div>
+    </div>
   </main>
 
   <script src="/web/terminal.js"></script>
