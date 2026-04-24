@@ -283,7 +283,6 @@ body {
 
 .resume-frame {
   width: 100%;
-  aspect-ratio: 8.5 / 11;
   border: none;
   display: block;
 }

@@ -21,29 +21,55 @@ document.addEventListener('about-revealed', () => {
   const fade   = wrapper.querySelector('.resume-fade');
   const shield = wrapper.querySelector('.resume-shield');
 
-  // Parse MediaBox → native px width
+  let ptW = 612, ptH = 792; // US Letter fallback
+  let expanded = false;
+
+  function fullHeight() {
+    return clip.clientWidth * (ptH / ptW);
+  }
+
+  function sizeFrame() {
+    const h = fullHeight();
+    if (h > 0) frame.style.height = h + 'px';
+  }
+
+  function expand() {
+    if (expanded) return;
+    expanded = true;
+    window.removeEventListener('scroll', checkExpand, { passive: true });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      clip.style.height = fullHeight() + 'px';
+      fade.hidden = true;
+    }));
+  }
+
+  function checkExpand() {
+    if (clip.getBoundingClientRect().bottom <= window.innerHeight + 2) expand();
+  }
+
+  // Parse MediaBox → native px width + aspect ratio
   fetch(PDF_DL)
     .then(r => r.arrayBuffer())
     .then(buf => {
       const text = new TextDecoder('latin1').decode(new Uint8Array(buf));
       const m = text.match(/MediaBox\s*\[\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/);
       if (m) {
-        const pxW = Math.round(parseFloat(m[1]) * 96 / 72);
-        clip.style.maxWidth = pxW + 'px';
+        ptW = parseFloat(m[1]);
+        ptH = parseFloat(m[2]);
+        clip.style.maxWidth = Math.round(ptW * 96 / 72) + 'px';
       }
+      sizeFrame();
+      checkExpand();
     });
 
-  // Scroll-to-expand preview
-  function checkExpand() {
-    if (clip.getBoundingClientRect().bottom <= window.innerHeight + 2) {
-      window.removeEventListener('scroll', checkExpand, { passive: true });
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        clip.style.height = frame.offsetHeight + 'px';
-        fade.hidden = true;
-      }));
-    }
-  }
+  const ro = new ResizeObserver(() => {
+    sizeFrame();
+    if (expanded) clip.style.height = fullHeight() + 'px';
+  });
+  ro.observe(clip);
+
   window.addEventListener('scroll', checkExpand, { passive: true });
+  checkExpand(); // handle case where clip already in viewport on init
 
   // Click to download
   shield.addEventListener('click', () => {
