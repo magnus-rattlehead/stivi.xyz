@@ -1,8 +1,13 @@
 {
   "framework": "go",
-  "functions": {
-    "main.go": {
-      "includeFiles": "{content,web}/**"
+  "builds": [
+    {
+      "src": "main.go",
+      "use": "@vercel/go",
+      "config": {
+        "framework": "go",
+        "includeFiles": "{content,web}/**"
+      }
     }
-  }
+  ]
 }
