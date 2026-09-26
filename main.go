@@ -164,6 +164,9 @@ func renderMarkdown(source []byte) ([]byte, error) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>stivi.xyz</title>
+<style>
+img { max-width: 100%; height: auto; }
+</style>
 </head>
 <body>
 `)
