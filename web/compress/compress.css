@@ -1,0 +1,12 @@
+main { max-width: 64rem; margin: 0 auto; }
+fieldset { min-width: 0; }
+input, select, button { max-width: 100%; font-size: 1rem; }
+input[type="number"] { width: 12rem; }
+input[type="range"] { width: 20rem; }
+small { display: block; }
+progress { width: 100%; }
+.previews { display: flex; flex-wrap: wrap; gap: 1rem; }
+.previews section { flex: 1 1 20rem; min-width: 0; }
+img, video { max-width: 100%; max-height: 65vh; }
+p { overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
