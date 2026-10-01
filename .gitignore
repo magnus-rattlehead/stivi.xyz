@@ -6,3 +6,6 @@ stivi.xyz
 
 # Vim swap files
 *.un~
+
+# in progess blog posts
+**/.inprogess/*

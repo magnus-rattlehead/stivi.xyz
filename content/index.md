@@ -5,6 +5,7 @@ facts about me.
 
 ## Other pages on this site
 
+* [Blog](/blog/): posts and notes.
 * [Media compressor](/compress/): shrink images and videos for sharing, entirely on your device.
 
 ---
@@ -92,7 +93,7 @@ Outside of software, I like skiing, cycling and wrestling. I'm hoping to move
 somewhere warm in the future to learn how to surf and drive a convertible. I
 also have an extremely clingy cat, Gabriella.
 
-![Gabriella relaxing on a rug](/web/assets/static/about.jpg)
+![Gabriella relaxing on a rug](/web/assets/static/about-960.webp)
 
 ## Links
 
