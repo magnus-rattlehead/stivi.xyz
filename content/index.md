@@ -1,17 +1,18 @@
 # Welcome to my personal page!
 
 I made this page so I can put random web applications I find useful to myself (usually some tool
-that I don't want to download an app for on my phone). I decided to also start writing about
-programming since it's fun and helps me reinforce my learning.
+that I don't want to download an app for on my phone). I decided to also start writing again as I
+enjoyed it in the past and haven't done it as a hobby for a long time, figured this would be a great
+spot to put it.
 
 ## Other pages on this site
 
-- [Blog](/blog/): posts about programming.
+- [Blog](/blog/): posts about programming, technology, and misc stuff.
 - [Media compressor](/compress/): shrink images and videos for sharing, entirely on your device.
 
 ---
 
-## Portfolio for recruiters
+## Current professional role
 
 ### **Dialpad Canada** | _Software Engineer, Product_
 
@@ -58,24 +59,16 @@ large downloads could be written reliably without buffering the entire archive i
 
 ---
 
-## Education
-
-University of Waterloo alumni 2025. I majored in Combinatorics and Optimization. I would describe
-combinatorics in laymans terms as the math behind counting things. More technically, it's about
-discrete structures and their properties. The optimization refers to mathematical programming, which
-is essentially finding boundaries of mathematical functions, given certain constraints/criteria. My
-favourite courses I took in my undergrad would probably be: Information Theory (CO 432),
-Computational Discrete Optimization (CO 353), Coding Theory (CO 331) and Introduction to German (GER
-101). I do continue practicing what I've learned (even German) in my free time.
-
----
-
 ## About
 
-Outside of software, I like skiing, cycling and wrestling. I'm hoping to move somewhere warm in the
-future to learn how to surf and drive a convertible. I also have an extremely clingy cat, Gabriella.
+University of Waterloo alumni 2025, majored in Combinatorics and Optimization. My favourite courses
+I took in my undergrad would probably be: Information Theory (CO 432), Computational Discrete
+Optimization (CO 353), Coding Theory (CO 331) and Introduction to German (GER 101). I may write a
+bit about my time at school in the blog section. I like skiing, cycling and wrestling. I'm hoping to
+move somewhere warm in the future to learn how to surf and drive a convertible. I also have a
+ridiculous creature of a cat, Gabriella.
 
-![Gabriella relaxing on a rug](/web/assets/static/about-960.webp)
+![Gabriella relaxing my carpet](/web/assets/static/about-960.webp)
 
 ## Links
 

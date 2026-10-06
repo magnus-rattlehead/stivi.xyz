@@ -203,8 +203,16 @@ func renderMarkdown(source []byte, navigation string) ([]byte, error) {
 <title>stivi.xyz</title>
 <style>
 img { max-width: 100%; height: auto; }
-pre { overflow-x: auto; padding: 1em; border-radius: 0.25em; background: #f6f8fa; }
-pre code { font-size: inherit; }
+pre {
+  overflow-x: auto;
+  padding: 1em;
+  border-radius: 0.25em;
+  background: #f6f8fa;
+  font: 0.875rem/1.5 monospace;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+pre code { font: inherit; }
 table { border-collapse: collapse; }
 th, td { padding: 0.4em 0.75em; border-bottom: 1px solid #ccc; }
 td { font-variant-numeric: tabular-nums; }

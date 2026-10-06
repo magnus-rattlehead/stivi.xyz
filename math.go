@@ -70,9 +70,8 @@ func (mathParser) Parse(_ ast.Node, reader text.Reader, context parser.Context) 
 
 func isMathSpace(b byte) bool { return b == ' ' || b == '\t' || b == '\n' || b == '\r' }
 
-// Pinned assets and integrity hashes from https://katex.org/docs/autorender.html.
-// Restrict rendering to parsed math so escaped dollars and code stay literal.
-const mathAssets = `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.9/dist/katex.min.css" integrity="sha384-lPx0C4zIUZLpveABMwOFcFeGZwsvKBJfhJ85FN1PYOV7xApBcFMhcAEMVKF8loOI" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.9/dist/katex.min.js" integrity="sha384-19KE2cFb3U+RUWmyhBz7aLOGDG8WrRC6hE3oY/HTZZlAAVWYTdmvLC//+TIV3zUx" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.9/dist/contrib/auto-render.min.js" integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz" crossorigin="anonymous" onload="document.querySelectorAll('.math').forEach(function(element) { renderMathInElement(element, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false}); });"></script>
+const mathAssets = `<link rel="stylesheet" href="/web/vendor/katex-0.18.9/katex.min.css">
+<script defer src="/web/vendor/katex-0.18.9/katex.min.js"></script>
+<script defer src="/web/vendor/katex-0.18.9/contrib/auto-render.min.js"></script>
+<script defer src="/web/math.js"></script>
 `

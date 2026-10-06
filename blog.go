@@ -12,6 +12,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 )
 
 // Posts are formatted as unsigned integer .md
@@ -58,7 +62,27 @@ func serveBlog(w http.ResponseWriter, r *http.Request, contentDir, stem, canonic
 			index.WriteString("No posts yet.\n")
 		}
 		for _, v := range slices.Backward(numbers) {
-			fmt.Fprintf(&index, "- [Post %d](/blog/%d/)\n", v, v)
+			post, err := readLocal(contentDir, fmt.Sprintf("blog/%d.md", v))
+			if err != nil {
+				serveError(w, r, err)
+				return
+			}
+			var title string
+			doc := md.Parser().Parse(text.NewReader(post))
+			for node := doc.FirstChild(); node != nil; node = node.NextSibling() {
+				if heading, ok := node.(*ast.Heading); ok && heading.Level == 1 {
+					title = strings.TrimSpace(string(heading.Text(post)))
+					break
+				}
+			}
+			index.WriteString("- [")
+			for i := 0; i < len(title); i++ {
+				if util.IsPunct(title[i]) {
+					index.WriteByte('\\')
+				}
+				index.WriteByte(title[i])
+			}
+			fmt.Fprintf(&index, "](/blog/%d/)\n", v)
 		}
 		source = []byte(index.String())
 	} else {
