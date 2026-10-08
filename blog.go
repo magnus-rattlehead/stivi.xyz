@@ -47,7 +47,7 @@ func blogNumbers(contentDir string) ([]int, error) {
 	return numbers, nil
 }
 
-func serveBlog(w http.ResponseWriter, r *http.Request, contentDir, stem, canonical string) {
+func serveBlog(w http.ResponseWriter, r *http.Request, contentDir, stem, canonical, assetPrefix string) {
 	numbers, err := blogNumbers(contentDir)
 	if err != nil {
 		serveError(w, r, err)
@@ -137,5 +137,5 @@ func serveBlog(w http.ResponseWriter, r *http.Request, contentDir, stem, canonic
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	servePage(w, r, data)
+	servePage(w, r, data, assetPrefix)
 }

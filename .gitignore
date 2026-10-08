@@ -1,11 +1,15 @@
 # Binary
 stivi.xyz
 
+# Generated browser assets and vendor build dependencies
+/web/dist/
+node_modules/
+
 # macOS
 .DS_Store
 
 # Vim swap files
 *.un~
 
-# in progess blog posts
-**/.inprogess/*
+# In progress blog posts
+.inprogress/

@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="/web/index.css?v=795c7cb7b32568f0">
+
 # Welcome to my personal page!
 
 I made this page so I can put random web applications I find useful to myself (usually some tool
@@ -68,7 +70,14 @@ bit about my time at school in the blog section. I like skiing, cycling and wres
 move somewhere warm in the future to learn how to surf and drive a convertible. I also have a
 ridiculous creature of a cat, Gabriella.
 
-![Gabriella relaxing my carpet](/web/assets/static/about-960.webp)
+<p>
+  <img class="about-photo"
+       src="/web/assets/static/about-480.webp?v=12676713b2fd4f7c"
+       srcset="/web/assets/static/about-480.webp?v=12676713b2fd4f7c 480w, /web/assets/static/about-960.webp?v=c7a355e331753af7 960w"
+       sizes="(max-width: 496px) calc(100vw - 16px), 480px"
+       width="480" height="360" loading="lazy" decoding="async"
+       alt="Gabriella relaxing my carpet">
+</p>
 
 ## Links
 

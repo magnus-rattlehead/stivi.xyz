@@ -6,7 +6,8 @@
       "use": "@vercel/go",
       "config": {
         "framework": "go",
-        "includeFiles": "{content,web}/**"
+        "buildCommand": "sh tools/build.sh",
+        "includeFiles": ["content/**", "web/dist/**"]
       }
     }
   ]

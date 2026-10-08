@@ -35,10 +35,9 @@
       <p><label for="quality">Quality: <output id="quality-value">50</output></label><br>
         <input id="quality" type="range" min="0" max="100" value="50">
       </p>
-      <p><label for="image-edge">Maximum width or height (pixels)</label><br>
-        <input id="image-edge" type="number" min="1" step="1" inputmode="numeric" placeholder="Original dimensions"
-          aria-describedby="image-dimensions-help">
-        <small id="image-dimensions-help">Limits the longer side while keeping the same proportions. For example, 1920 × 1080 becomes 1280 × 720 with a limit of 1280. Leave blank to keep the original dimensions.</small>
+      <p>
+        <button id="image-crop" type="button" disabled aria-haspopup="dialog">Crop &amp; resize</button>
+        <output id="image-dimensions" aria-live="polite"></output>
       </p>
       <p>Changes update the preview and actual file size after encoding.</p>
       <p><a href="https://developer.mozilla.org/en-US/blog/image-formats-codecs-compression-tools/" target="_blank"
@@ -52,10 +51,9 @@
       <p><label for="bitrate">Video bitrate (kbps)</label><br>
         <input id="bitrate" type="number" min="1" step="any" inputmode="decimal" required>
       </p>
-      <p><label for="video-edge">Maximum width or height (pixels)</label><br>
-        <input id="video-edge" type="number" min="2" step="1" inputmode="numeric" placeholder="Original dimensions"
-          aria-describedby="video-dimensions-help">
-        <small id="video-dimensions-help">Limits the longer side while keeping the same proportions. For example, 1920 × 1080 becomes 1280 × 720 with a limit of 1280. Leave blank to keep the original dimensions.</small>
+      <p>
+        <button id="video-crop" type="button" disabled aria-haspopup="dialog">Crop &amp; resize</button>
+        <output id="video-dimensions" aria-live="polite"></output>
       </p>
       <p><label for="fps">Frame rate</label><br>
         <select id="fps">
@@ -99,7 +97,7 @@
         <h2>Original</h2>
         <img id="original-image" alt="Original image" hidden>
         <video id="original-video" controls playsinline preload="metadata" hidden></video>
-        <p id="sample-help" hidden>Seek here to choose where the sample starts.</p>
+        <p id="sample-help" hidden>Seek here to choose where the sample starts or which frame to use in Crop &amp; resize.</p>
       </section>
       <section id="output-section" hidden>
         <h2 id="output-heading">Output</h2>

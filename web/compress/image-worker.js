@@ -1,4 +1,5 @@
 import encode from './vendor/avif/encode.js';
+import { encodingGeometry } from './geometry.js';
 
 let bitmap;
 
@@ -27,14 +28,12 @@ self.onmessage = async ({ data }) => {
       self.postMessage({ id, width: bitmap.width, height: bitmap.height, preview });
     } else if (action === 'encode') {
       if (!bitmap) throw new Error('Choose an image first.');
-      const scale = data.maxDimension ? Math.min(1, data.maxDimension / Math.max(bitmap.width, bitmap.height)) : 1;
-      const width = Math.max(1, Math.round(bitmap.width * scale));
-      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const { crop, width, height } = encodingGeometry(bitmap, data);
       const canvas = new OffscreenCanvas(width, height);
       try {
         const context = canvas.getContext('2d', { colorSpace: 'srgb', willReadFrequently: true });
         context.imageSmoothingQuality = 'high';
-        context.drawImage(bitmap, 0, 0, width, height);
+        context.drawImage(bitmap, crop.left, crop.top, crop.width, crop.height, 0, 0, width, height);
         const bytes = await encode(context.getImageData(0, 0, width, height), {
           quality: data.quality, speed: 6, bitDepth: 8,
         });

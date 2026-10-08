@@ -2,10 +2,10 @@ package main
 
 import (
 	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -14,13 +14,12 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
-	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 )
@@ -31,6 +30,7 @@ var md = goldmark.New(
 		highlighting.NewHighlighting(highlighting.WithStyle("github")),
 	),
 	goldmark.WithParserOptions(parser.WithInlineParsers(util.Prioritized(mathParser{}, 199))),
+	goldmark.WithRendererOptions(html.WithUnsafe()),
 )
 
 func main() {
@@ -38,11 +38,19 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+	handler, err := newHandler("content", "web")
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Printf("listening on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, newHandler("content", "web")))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
 
-func newHandler(contentDir, webDir string) http.Handler {
+func newHandler(contentDir, webDir string) (http.Handler, error) {
+	assetPrefix, err := builtAssetPrefix(webDir)
+	if err != nil {
+		return nil, err
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			w.Header().Set("Allow", "GET, HEAD")
@@ -60,13 +68,14 @@ func newHandler(contentDir, webDir string) http.Handler {
 			return
 		}
 		if asset, ok := strings.CutPrefix(name, "web/"); ok {
-			serveAsset(w, r, webDir, asset)
+			immutable := assetPrefix != "/web/" && strings.HasPrefix(r.URL.Path, assetPrefix)
+			serveAsset(w, r, webDir, asset, immutable)
 			return
 		}
 
 		ext := path.Ext(name)
 		if !strings.HasSuffix(name, "/") && ext != "" && ext != ".md" && ext != ".html" {
-			serveAsset(w, r, contentDir, name)
+			serveAsset(w, r, contentDir, name, false)
 			return
 		}
 		stem := strings.TrimSuffix(name, "/")
@@ -78,7 +87,7 @@ func newHandler(contentDir, webDir string) http.Handler {
 			stem, canonical = "index", "/"
 		}
 		if stem == "blog" || strings.HasPrefix(stem, "blog/") {
-			serveBlog(w, r, contentDir, stem, canonical)
+			serveBlog(w, r, contentDir, stem, canonical, assetPrefix)
 			return
 		}
 		for _, extension := range []string{".html", ".md"} {
@@ -104,11 +113,11 @@ func newHandler(contentDir, webDir string) http.Handler {
 				}
 			}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			servePage(w, r, data)
+			servePage(w, r, data, assetPrefix)
 			return
 		}
 		http.NotFound(w, r)
-	})
+	}), nil
 }
 
 func validName(name string) bool {
@@ -142,7 +151,7 @@ func readLocal(root, name string) ([]byte, error) {
 	return os.ReadFile(filename)
 }
 
-func serveAsset(w http.ResponseWriter, r *http.Request, root, name string) {
+func serveAsset(w http.ResponseWriter, r *http.Request, root, name string, immutable bool) {
 	filename, err := localPath(root, name)
 	if err != nil {
 		serveError(w, r, err)
@@ -159,27 +168,34 @@ func serveAsset(w http.ResponseWriter, r *http.Request, root, name string) {
 		serveError(w, r, err)
 		return
 	}
-	w.Header().Set("Cache-Control", "public, max-age=3600")
-	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
-}
-
-// Pages revalidate on each visit; compressed and plain responses have distinct validators.
-func servePage(w http.ResponseWriter, r *http.Request, data []byte) {
-	w.Header().Add("Vary", "Accept-Encoding")
-	for _, encoding := range strings.Split(r.Header.Get("Accept-Encoding"), ",") {
-		// Only accept an unqualified gzip token; quality-weighted requests can use plain HTML.
-		if strings.TrimSpace(encoding) == "gzip" {
-			var buf bytes.Buffer
-			zw := gzip.NewWriter(&buf)
-			_, _ = zw.Write(data)
-			_ = zw.Close()
-			data = buf.Bytes()
-			w.Header().Set("Content-Encoding", "gzip")
-			break
+	cacheControl := "public, max-age=3600"
+	if version := r.URL.Query().Get("v"); version != "" && !immutable {
+		hash := sha256.New()
+		if _, err := io.Copy(hash, file); err != nil {
+			serveError(w, r, err)
+			return
+		}
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			serveError(w, r, err)
+			return
+		}
+		digest := fmt.Sprintf("%x", hash.Sum(nil))
+		w.Header().Set("ETag", `"`+digest+`"`)
+		// Only matching content versions are safe to cache for a year.
+		cacheControl = "no-cache"
+		if version == digest[:16] {
+			cacheControl = "public, max-age=31536000, immutable"
 		}
 	}
-	w.Header().Set("ETag", fmt.Sprintf(`"%x"`, sha256.Sum256(data)))
-	http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(data))
+	if immutable {
+		cacheControl = "public, max-age=31536000, immutable"
+	}
+	w.Header().Set("Cache-Control", cacheControl)
+	if contentType := compressibleAssetType(name); contentType != "" {
+		serveCompressedAsset(w, r, root, name, file, info.ModTime(), contentType, immutable)
+		return
+	}
+	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }
 
 func serveError(w http.ResponseWriter, r *http.Request, err error) {
@@ -223,20 +239,6 @@ td { font-variant-numeric: tabular-nums; }
 		buf.WriteString(mathAssets)
 	}
 	buf.WriteString("</head>\n<body>\n")
-	_ = ast.Walk(doc, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
-		img, ok := node.(*ast.Image)
-		if ok && entering && string(img.Destination) == "/web/assets/static/about-960.webp" {
-			// Reserve image space and defer fetching it.
-			for _, attr := range [][2]string{
-				{"loading", "lazy"}, {"decoding", "async"}, {"width", "1920"}, {"height", "1440"},
-				{"srcset", "/web/assets/static/about-480.webp 480w, /web/assets/static/about-960.webp 960w, /web/assets/static/about-1920.webp 1920w"},
-				{"sizes", "(max-width: 1936px) calc(100vw - 16px), 1920px"},
-			} {
-				img.SetAttributeString(attr[0], []byte(attr[1]))
-			}
-		}
-		return ast.WalkContinue, nil
-	})
 	if err := md.Renderer().Render(&buf, source, doc); err != nil {
 		return nil, err
 	}

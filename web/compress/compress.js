@@ -1,4 +1,5 @@
 import { ImageProcessor } from './image.js';
+import { resizeGeometry } from './geometry.js';
 
 const IMAGE_UPDATE_DELAY_MS = 500;
 const CODEC_SELECTION_DELAY_MS = 250;
@@ -6,7 +7,8 @@ const VIDEO_PAYLOAD_FRACTION = 0.95; // Allow approximately 5% for container ove
 
 const ids = [
   'file', 'target', 'unit', 'source-info', 'image-controls', 'video-controls',
-  'quality', 'quality-value', 'image-edge', 'video-edge', 'compatibility', 'codec', 'bitrate',
+  'quality', 'quality-value', 'image-crop', 'video-crop', 'image-dimensions', 'video-dimensions',
+  'compatibility', 'codec', 'bitrate',
   'fps', 'audio', 'audio-bitrate', 'size', 'distance', 'sample', 'compress', 'cancel',
   'progress', 'status', 'download', 'share', 'original-section', 'original-image',
   'original-video', 'sample-help', 'output-section', 'output-heading', 'output-info',
@@ -24,6 +26,10 @@ let result;
 let originalURL;
 let outputURL;
 let activeJob;
+let geometry;
+let cropEditor;
+let cropOpening = false;
+let cropRequestId = 0;
 
 // Async results must belong to both the selected file and its current settings.
 let fileVersion = 0;
@@ -56,14 +62,10 @@ function readTargetBytes() {
 }
 
 function readSettings() {
-  const dimensionInput = mediaType === 'image' ? ui['image-edge'] : ui['video-edge'];
-  if (!dimensionInput.validity.valid) {
-    return null;
-  }
-
-  const maxDimension = dimensionInput.value === '' ? null : dimensionInput.valueAsNumber;
+  if (!geometry) return null;
+  const { crop, width, height } = geometry;
   if (mediaType === 'image') {
-    return { maxDimension, quality: Number(ui.quality.value) };
+    return { crop: { ...crop }, width, height, quality: Number(ui.quality.value) };
   }
 
   const bitrate = ui.bitrate.valueAsNumber * 1000;
@@ -72,7 +74,7 @@ function readSettings() {
   }
 
   return {
-    maxDimension,
+    crop: { ...crop }, width, height,
     bitrate: Math.round(bitrate),
     fps: Number(ui.fps.value),
     audio: ui.audio.checked && !!metadata?.hasAudio,
@@ -172,6 +174,10 @@ function renderControls() {
   const canSave = canSaveOutput();
   ui['image-controls'].disabled = !ready;
   ui['video-controls'].disabled = !ready;
+  for (const type of ['image', 'video']) {
+    ui[`${type}-crop`].disabled = !ready || cropOpening;
+    ui[`${type}-dimensions`].textContent = geometry ? `${geometry.width} × ${geometry.height} pixels` : '';
+  }
   ui.download.disabled = !canSave;
 
   let canShare = false;
@@ -357,6 +363,8 @@ async function selectFile() {
   const selected = ui.file.files[0];
   if (!selected) return;
   const fileGeneration = ++fileVersion;
+  closeCropEditor();
+  geometry = null;
   ++settingsVersion;
   ++codecRequestId;
   clearTimeout(codecTimer);
@@ -377,7 +385,6 @@ async function selectFile() {
   ui['image-controls'].hidden = mediaType !== 'image';
   ui['video-controls'].hidden = ui.sample.hidden = ui['sample-help'].hidden = mediaType !== 'video';
   ui.quality.value = ui['quality-value'].value = '50';
-  ui['image-edge'].value = ui['video-edge'].value = '';
   ui.fps.value = '0';
   ui.compatibility.checked = false;
   ui.audio.checked = true;
@@ -413,6 +420,7 @@ async function selectFile() {
       }
       setOriginal(file);
     }
+    geometry = resizeGeometry(metadata, undefined, 1, mediaType === 'video');
     ready = true;
     ui['source-info'].textContent = `${file.name} · ${metadata.width} × ${metadata.height}`
       + (metadata.duration ? ` · ${metadata.duration.toFixed(1)} seconds` : '');
@@ -420,6 +428,55 @@ async function selectFile() {
     if (mediaType === 'image') scheduleImageEncoding();
     else scheduleCodecSelection();
   });
+}
+
+function closeCropEditor() {
+  ++cropRequestId;
+  cropEditor?.close();
+  cropEditor = null;
+  cropOpening = false;
+}
+
+async function editGeometry(event) {
+  if (!ready || cropOpening) return;
+  const request = ++cropRequestId;
+  const version = fileVersion;
+  const trigger = event.currentTarget;
+  const video = mediaType === 'video';
+  const source = metadata;
+  const currentGeometry = geometry;
+  const processor = videoProcessor;
+  const imageURL = originalURL;
+  const time = ui['original-video'].currentTime;
+  if (video) ui['original-video'].pause();
+  cropOpening = true;
+  renderControls();
+  try {
+    const { CropEditor } = await import('./crop-editor.js');
+    if (request !== cropRequestId || version !== fileVersion) return;
+    cropEditor = new CropEditor({
+      source, video, geometry: currentGeometry,
+      preview: signal => video ? processor.previewFrame(time, signal) : imageURL,
+    });
+    const next = await cropEditor.open();
+    if (request !== cropRequestId || version !== fileVersion) return;
+    if (next && JSON.stringify(next) !== JSON.stringify(geometry)) {
+      geometry = next;
+      encodingChanged();
+    }
+  } catch (error) {
+    if (request === cropRequestId && version === fileVersion) {
+      cropEditor?.close();
+      ui.status.textContent = error.message || 'The crop editor could not be opened.';
+    }
+  } finally {
+    if (request === cropRequestId) {
+      cropEditor = null;
+      cropOpening = false;
+      render();
+      trigger.focus({ preventScroll: true });
+    }
+  }
 }
 
 function encodingChanged() {
@@ -516,6 +573,8 @@ function disposePage() {
   ++fileVersion;
   ++codecRequestId;
   ready = false;
+  closeCropEditor();
+  geometry = null;
   clearTimeout(imageTimer);
   clearTimeout(codecTimer);
   pendingImage = false;
@@ -549,9 +608,11 @@ ui.sample.addEventListener('click', () => compressVideo(true));
 ui.cancel.addEventListener('click', cancelCurrentJob);
 ui.download.addEventListener('click', downloadOutput);
 ui.share.addEventListener('click', shareOutput);
+ui['image-crop'].addEventListener('click', editGeometry);
+ui['video-crop'].addEventListener('click', editGeometry);
 
 const encodingControlIds = [
-  'quality', 'image-edge', 'video-edge', 'bitrate',
+  'quality', 'bitrate',
   'fps', 'audio', 'audio-bitrate', 'compatibility',
 ];
 for (const id of encodingControlIds) {

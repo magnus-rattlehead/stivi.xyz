@@ -1,7 +1,8 @@
 import {
   Input, BlobSource, ALL_FORMATS, Output, BufferTarget, Mp4OutputFormat,
-  Conversion, Quality, canEncodeVideo, canEncodeAudio,
+  Conversion, Quality, CanvasSink, canEncodeVideo, canEncodeAudio,
 } from './vendor/mediabunny/mediabunny.min.mjs';
+import { encodingGeometry } from './geometry.js';
 
 export const codecNames = { av1: 'AV1', hevc: 'HEVC', avc: 'H.264' };
 
@@ -44,12 +45,35 @@ export class VideoProcessor {
 
   configuration(settings) {
     const meta = this.metadata;
-    const scale = settings.maxDimension ? Math.min(1, settings.maxDimension / Math.max(meta.width, meta.height)) : 1;
-    // Even dimensions work with 4:2:0 encoders; contain preserves the source aspect ratio.
-    const width = Math.max(2, Math.floor(meta.width * scale / 2) * 2);
-    const height = Math.max(2, Math.floor(meta.height * scale / 2) * 2);
+    const { width, height } = encodingGeometry(meta, settings, true);
     const frameRate = settings.fps ? Math.min(settings.fps, meta.fps) : undefined;
     return { width, height, frameRate, quality: new Quality({ bitrate: settings.bitrate }) };
+  }
+
+  async previewFrame(time, signal) {
+    signal.throwIfAborted();
+    const meta = this.metadata;
+    const scale = Math.min(1, 1280 / Math.max(meta.width, meta.height));
+    const sink = new CanvasSink(this.video, {
+      width: Math.max(1, Math.round(meta.width * scale)),
+      height: Math.max(1, Math.round(meta.height * scale)),
+      fit: 'contain', poolSize: 1,
+    });
+    const timestamp = meta.first + Math.min(Math.max(0, time || 0), Math.max(0, meta.duration - 0.001));
+    let frame = await sink.getCanvas(timestamp);
+    if (!frame && !signal.aborted) frame = await sink.getCanvas(await this.video.getFirstTimestamp());
+    if (!frame) throw new Error('A preview frame could not be opened.');
+    try {
+      signal.throwIfAborted();
+      const blob = frame.canvas.convertToBlob
+        ? await frame.canvas.convertToBlob({ type: 'image/png' })
+        : await new Promise(resolve => frame.canvas.toBlob(resolve, 'image/png'));
+      signal.throwIfAborted();
+      if (!blob) throw new Error('A preview frame could not be opened.');
+      return blob;
+    } finally {
+      frame.canvas.width = frame.canvas.height = 1;
+    }
   }
 
   async selectCodec(settings) {
@@ -88,6 +112,7 @@ export class VideoProcessor {
         input: this.input, output, tracks: 'primary', copy: false, tags: {}, trim, showWarnings: false,
         video: {
           ...config, codec, fit: 'contain', forceTranscode: true, allowTransformationMetadata: false,
+          crop: encodingGeometry(this.metadata, settings, true).crop,
           // Materialize SDR RGB pixels so the encoder receives an 8-bit surface.
           process: (frame) => {
             signal.throwIfAborted();
