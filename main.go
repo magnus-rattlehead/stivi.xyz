@@ -191,6 +191,9 @@ func serveAsset(w http.ResponseWriter, r *http.Request, root, name string, immut
 		cacheControl = "public, max-age=31536000, immutable"
 	}
 	w.Header().Set("Cache-Control", cacheControl)
+	if path.Ext(name) == ".webmanifest" {
+		w.Header().Set("Content-Type", "application/manifest+json")
+	}
 	if contentType := compressibleAssetType(name); contentType != "" {
 		serveCompressedAsset(w, r, root, name, file, info.ModTime(), contentType, immutable)
 		return
@@ -217,6 +220,11 @@ func renderMarkdown(source []byte, navigation string) ([]byte, error) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>stivi.xyz</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <style>
 img { max-width: 100%; height: auto; }
 pre {
