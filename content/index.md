@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="/web/index.css?v=795c7cb7b32568f0">
+<link rel="stylesheet" href="/web/index.css?v=9c9700a430c316ac">
 
 # Welcome to my personal page!
 
@@ -74,7 +74,7 @@ ridiculous creature of a cat, Gabriella.
   <img class="about-photo"
        src="/web/assets/static/about-480.webp?v=12676713b2fd4f7c"
        srcset="/web/assets/static/about-480.webp?v=12676713b2fd4f7c 480w, /web/assets/static/about-960.webp?v=c7a355e331753af7 960w"
-       sizes="(max-width: 496px) calc(100vw - 16px), 480px"
+       sizes="auto, (max-width: 504px) calc(100vw - 1.5rem), 480px"
        width="480" height="360" loading="lazy" decoding="async"
        alt="Gabriella relaxing my carpet">
 </p>

@@ -1,13 +1,6 @@
 .about-photo {
   display: block;
-  width: 480px;
-  max-width: 100%;
+  width: min(100%, 480px);
   height: auto;
   margin-inline: auto;
-}
-
-@media (max-width: 600px) {
-  .about-photo {
-    width: 100%;
-  }
 }

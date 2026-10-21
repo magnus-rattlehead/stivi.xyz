@@ -231,12 +231,14 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   max-width: 800px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: clamp(0.75rem, 2vw, 1rem);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
+h1 { font-size: clamp(1.75rem, 5vw, 2rem); }
+h2 { font-size: clamp(1.4rem, 4vw, 1.5rem); }
+h3 { font-size: 1.2rem; }
 img { max-width: 100%; height: auto; }
 pre {
   overflow-x: auto;
@@ -253,10 +255,6 @@ th, td { padding: 0.4em 0.75em; border-bottom: 1px solid #ccc; white-space: nowr
 td { font-variant-numeric: tabular-nums; }
 .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25em 0; }
 @media (max-width: 600px) {
-  body { padding: 0.75rem; }
-  h1 { font-size: 1.75rem; }
-  h2 { font-size: 1.4rem; }
-  h3 { font-size: 1.2rem; }
   pre { font-size: 0.8rem; padding: 0.75em; }
   th, td { padding: 0.3em 0.5em; }
 }
