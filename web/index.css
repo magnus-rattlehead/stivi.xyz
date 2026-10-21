@@ -5,3 +5,9 @@
   height: auto;
   margin-inline: auto;
 }
+
+@media (max-width: 600px) {
+  .about-photo {
+    width: 100%;
+  }
+}

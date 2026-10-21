@@ -22,3 +22,20 @@ p { overflow-wrap: anywhere; }
 .crop-actions button { min-height: 2.75rem; }
 .crop-reset { margin-right: auto; }
 [hidden] { display: none !important; }
+
+@media (max-width: 600px) {
+  main { padding: 0 0.5rem; }
+  input, select, button {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
+  input[type="number"], input[type="range"] { width: 100%; max-width: none; }
+  input[type="range"] { height: 2.75rem; }
+  .previews section { flex: 1 1 100%; }
+  .crop-dialog {
+    width: calc(100% - 1rem);
+    padding: 1rem;
+    max-height: calc(100dvh - 1rem);
+  }
+  .crop-actions button { flex: 1 1 45%; min-width: 0; }
+}
