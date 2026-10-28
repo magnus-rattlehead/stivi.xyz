@@ -28,7 +28,22 @@ I might start writing posts about some unique challenges I worked on.
 
 ---
 
-## Some projects
+## Some projects that are used by other people
+
+### **ZARSE** | [Github](https://github.com/magnus-rattlehead/zarse)
+
+_Audio file parsing library_
+
+I was working on a simple program that takes an audio file and creates an "ultraslowed" variant
+while learning Zig. However, I found there was no pure Zig off the shelf implementation of an audio
+parsing library, either they were bindings against existing C implementations or scattered around (a
+good source I found was [this](https://codeberg.org/audiophile)). So I decided to start the
+initiative, in way over my head as the most experience I've had is plain ol' uncompressed wavs. I
+was hoping starting this would bring in contributors as there is a lot of demand for something like
+this in the Zig community. As I've been working on this (still am!), I've learned alot about how
+audio is stored and the cool math behind audio compression and FFT implementations.
+
+There is a lot of work and maintenance ahead.
 
 ### **Hearthstore** | [GitHub](https://github.com/magnus-rattlehead/hearthstore)
 
